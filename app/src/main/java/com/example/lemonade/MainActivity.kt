@@ -15,11 +15,16 @@
  */
 package com.example.lemonade
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
+import pl.droidsonroids.gif.GifImageView
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +34,10 @@ class MainActivity : AppCompatActivity() {
      * Anything labeled var instead of val is expected to be changed in the functions but DO NOT
      * alter their initial values declared here, this could cause the app to not function properly.
      */
+    private val tag = "MainActivity"
+    private lateinit var button: Button
+    private lateinit var button2: Button
+    private lateinit var gif: GifImageView
     private val LEMONADE_STATE = "LEMONADE_STATE"
     private val LEMON_SIZE = "LEMON_SIZE"
     private val SQUEEZE_COUNT = "SQUEEZE_COUNT"
@@ -36,11 +45,13 @@ class MainActivity : AppCompatActivity() {
     private val SELECT = "select"
     // SQUEEZE represents the "squeeze lemon" state
     private val SQUEEZE = "squeeze"
+
     // DRINK represents the "drink lemonade" state
     private val DRINK = "drink"
     // RESTART represents the state where the lemonade has been drunk and the glass is empty
     private val RESTART = "restart"
     // Default the state to select
+    private val DONE = "done"
     private var lemonadeState = "select"
     // Default lemonSize to -1
     private var lemonSize = -1
@@ -53,7 +64,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        gif = findViewById(R.id.gifImageView)
+        button = findViewById(R.id.button)
+        button2 = findViewById(R.id.button2)
+        gif.visibility = View.INVISIBLE
+        button.visibility = View.INVISIBLE
+        button2.visibility = View.INVISIBLE
         // === DO NOT ALTER THE CODE IN THE FOLLOWING IF STATEMENT ===
         if (savedInstanceState != null) {
             lemonadeState = savedInstanceState.getString(LEMONADE_STATE, "select")
@@ -71,9 +87,27 @@ class MainActivity : AppCompatActivity() {
         }
         lemonImage!!.setOnLongClickListener {
             showSnackbar()
-            false
+
         }
+        button.setOnClickListener{
+
+            lemonImage!!.visibility = View.INVISIBLE
+            gif.visibility = View.VISIBLE
+            button2.visibility = View.VISIBLE
+            button.visibility = View.INVISIBLE
+        }
+        button2.setOnClickListener{
+            button2.visibility = View.INVISIBLE
+            lemonadeState = SELECT
+            lemonImage?.setImageResource(R.drawable.lemon_tree)
+            gif.visibility = View.INVISIBLE
+            lemonImage!!.visibility = View.VISIBLE
+
+        }
+        logging()
     }
+
+
 
     /**
      * === DO NOT ALTER THIS METHOD ===
@@ -91,32 +125,37 @@ class MainActivity : AppCompatActivity() {
      * Clicking will elicit a different response depending on the state.
      * This method determines the state and proceeds with the correct action.
      */
+    @SuppressLint("ResourceType")
     private fun clickLemonImage() {
-        if(lemonadeState == SELECT){
-            setViewElements()
-            lemonadeState = SQUEEZE
-            lemonImage?.setImageResource(R.drawable.lemon_squeeze)
-        }else if(lemonadeState == SQUEEZE){
-            var count = LemonTree().pick()
-            squeezeCount++
-            lemonSize--
-
-            if(squeezeCount == count){
-                setViewElements()
-                lemonadeState = DRINK
-                lemonImage?.setImageResource(R.drawable.lemon_drink)
-                lemonSize = 0
+        when(lemonadeState){
+            SELECT -> {
                 squeezeCount = 0
+                lemonSize = LemonTree().pick()
+                lemonImage?.setImageResource(R.drawable.lemon_squeeze)
+                lemonadeState = SQUEEZE
             }
-        }else if(lemonadeState == DRINK){
-            setViewElements()
-            lemonadeState = RESTART
-            lemonImage?.setImageResource(R.drawable.lemon_restart)
-        }else{
-            setViewElements()
-            lemonadeState = SELECT
-            lemonImage?.setImageResource(R.drawable.lemon_tree)
+            SQUEEZE -> {
+                lemonSize--
+                squeezeCount++
+                if(lemonSize ==0){
+                    lemonadeState = DRINK
+                    lemonImage?.setImageResource(R.drawable.lemon_drink)
+                }
+            }
+            DRINK -> {
+                lemonSize--
+                lemonadeState = RESTART
+                lemonImage?.setImageResource(R.drawable.lemon_restart)
+            }
+            RESTART ->{
+                lemonadeState = SELECT
+                button.visibility = View.VISIBLE
+                lemonImage?.setImageResource(R.drawable.lemon_tree)
+            }
+
         }
+
+//
     }
 
     /**
@@ -125,13 +164,14 @@ class MainActivity : AppCompatActivity() {
     private fun setViewElements() {
         val textAction: TextView = findViewById(R.id.text_action)
         if(lemonadeState == SELECT){
-            textAction.text =  getString(R.string.lemon_squeeze)
-        }else if(lemonadeState == SQUEEZE){
-            textAction.text =  getString(R.string.lemon_drink)
-        }else if(lemonadeState == DRINK){
-            textAction.text =  getString(R.string.lemon_empty_glass)
-        }else{
             textAction.text =  getString(R.string.lemon_select)
+        }else if(lemonadeState == SQUEEZE){
+            textAction.text =  getString(R.string.lemon_squeeze)
+        }else if(lemonadeState == DRINK){
+            textAction.text =  getString(R.string.lemon_drink)
+        }
+        else{
+            textAction.text =  getString(R.string.lemon_empty_glass)
         }
     }
 
@@ -151,6 +191,13 @@ class MainActivity : AppCompatActivity() {
             Snackbar.LENGTH_SHORT
         ).show()
         return true
+    }
+    fun logging() {
+        Log.e(tag, "ERROR: a serious error like an app crash")
+        Log.w(tag, "WARN: warns about the potential for serious errors")
+        Log.i(tag, "INFO: reporting technical information, such as an operation succeeding")
+        Log.d(tag, "DEBUG: reporting technical information useful for debugging")
+        Log.v(tag, "VERBOSE: more verbose than DEBUG logs")
     }
 }
 
